@@ -27,13 +27,11 @@ class NCF_MLP(nn.Module):
     def forward(self, user, items):
 
         ## user embedding
-        user_embed = self.mlp_embed_users(torch.LongTensor(user)-1)
+        user_embed = self.mlp_embed_users(user)
         ##item embedding
-        item_embed = self.mlp_embed_items(torch.LongTensor(items)-1)
+        item_embed = self.mlp_embed_items(items)
 
         ##concat
-        # print('user embed', user_embed.shape)
-        # print('movie embed', item_embed.shape)
         user_item = torch.cat([user_embed, item_embed], dim = 1)
 
         logits = self.mlp_layers(user_item)
