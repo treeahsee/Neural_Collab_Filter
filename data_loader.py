@@ -31,7 +31,7 @@ def load_data(size):
     user_map = {old : new for new, old in enumerate(unique_users)}
     data['user_id'] = data.user_id.map(user_map)
     movie_map = {old : new for new, old in enumerate(unique_movies)}
-    data['movie_id'] - data.movie_id.map(movie_map)
+    data['movie_id'] = data.movie_id.map(movie_map)
 
     ##user item size
     num_users = unique_users.shape[0]
@@ -58,6 +58,8 @@ def train_test_split(data, test_size = 0.2):
 
     train_df = pd.concat(train).reset_index()
     test_df = pd.concat(test).reset_index()
+
+
         
     return train_df, test_df
 
