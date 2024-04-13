@@ -7,6 +7,13 @@ from torch.optim import Adam
 import argparse
 import yaml
 
+
+### TODO:  enable device cuda
+###        pytorch dataset class
+###        new models + param tuning
+###        post training analysis on users/item learning
+###
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, help="configs.yml")
 args = parser.parse_args()
@@ -32,7 +39,7 @@ if __name__ == '__main__':
     for epoch in range(config['epochs']):
         for b in range(len(train)//batch):
             df = train.sample(frac=batch/len(train))
-            # print(max(df.movie_id.values))
+
             opt.zero_grad()
             logits = model.forward(torch.tensor(df.user_id.values), torch.tensor(df.movie_id.values))
             loss = criterion(logits.squeeze(), torch.FloatTensor(df.rating.values))
