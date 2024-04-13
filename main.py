@@ -12,7 +12,7 @@ import yaml
 ###        pytorch dataset class
 ###        new models + param tuning
 ###        post training analysis on users/item learning
-###
+###        trianing on 20m
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, help="configs.yml")
