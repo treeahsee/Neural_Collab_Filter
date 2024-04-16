@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import urllib.request
 import zipfile
-import sys
+from torch.utils.data import Dataset, DataLoader
 
 def load_data(size):
     if not os.path.exists(f'ml-{size}.zip'):
@@ -21,7 +21,7 @@ def load_data(size):
     
     elif size == '20m':
         data = pd.read_csv('ml-20m/ratings.csv')
-        data.rename(index= {0: 'user_id', 1: 'movie_id', 2:'rating', 3:'timestamp'})
+        data = data.rename(columns = {'userId': 'user_id', 'movieId': 'movie_id'})
 
 
     unique_users = data['user_id'].unique()
@@ -65,3 +65,14 @@ def train_test_split(data, test_size = 0.2):
 
 
 
+class MovielensDataset(Dataset):
+    def __init__(self, users, movies, ratings):
+        self.users = users
+        self.movies = movies
+        self.ratings = ratings
+
+    def __len__(self):
+        return self.users.shape[0]
+    
+    def __getitem__(self, index):
+        return self.users[index], self.movies[index], self.ratings[index]
