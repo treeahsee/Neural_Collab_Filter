@@ -8,11 +8,8 @@ import argparse
 import yaml
 from torch.utils.data import DataLoader
 
-### TODO:  enable device cuda
-###        pytorch dataset class
-###        new models + param tuning
+### TODO:  new models + param tuning
 ###        post training analysis on users/item learning
-###        trianing on 20m
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -35,7 +32,12 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         optimizer.step()
         optimizer.zero_grad()
 
-        if batch % 100 == 0:
+        if config['movielens_data'] == '100k':
+            batch_num = 100
+        else:
+            batch_num = 10000
+
+        if batch % batch_num == 0:
             loss, current = loss.item(), batch * config['batch_size'] + len(user)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
