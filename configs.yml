@@ -2,3 +2,6 @@ movielens_data: '20m' #[20m or 100k]
 learning_rate: 0.001
 epochs: 2
 batch_size: 256
+optimizer: 'sgd' #[adam or sgd]
+model: 'mlp' #[mlp or gmf]
+latent_dims: 32
