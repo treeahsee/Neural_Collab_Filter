@@ -4,5 +4,5 @@ weight_decay: 0.0000001 # Only used for Adam
 epochs: 5
 batch_size: 8192
 optimizer: 'adam' #[adam or SGD]
-model: 'gmf' #[mlp | gmf | nmf] 
+model: 'gmf' #[mlp | gmf | nmf | joint_nmf]
 latent_dims: 64

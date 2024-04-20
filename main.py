@@ -13,7 +13,7 @@ from gmf import GMF
 from ncf_mlp import NCF_MLP
 from neural_mf import NEURAL_MF
 
-from train import train_gmf, train_joint_nerual_mf, train_mlp
+from train import train_gmf, train_joint_nerual_mf, train_mlp, train_neural_mf
 
 ### TODO:  new models + param tuning
 ###        post training analysis on users/item learning
@@ -28,8 +28,8 @@ with open(args.config, "r") as f:
     config = yaml.safe_load(f)
 
 # Ensure we don't error out if optional params aren't set
-def get_optional_config(key):
-    return config[key] if key in config else None
+def get_optional_config(key, default=None):
+    return config[key] if key in config else default
 
 if __name__ == '__main__':
     data, num_users, num_items = load_data(config['movielens_data'])
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     optimizer_type = config['optimizer']
 
     weight_decay = get_optional_config('weight_decay')
+    alpha = get_optional_config('alpha', 0.5)
 
     if config['model'] == 'gmf':
         model = train_gmf(train_dataloader,
@@ -75,7 +76,56 @@ if __name__ == '__main__':
                           device=device,
                           weight_decay=weight_decay
                           )
-    
+
+    elif config['model'] == 'nmf':
+        # TODO: Consider using different hyperparameters for these from the main model
+        print('Training GMF')
+        print('----------------------')
+        gmf = train_gmf(train_dataloader,
+                        test_dataloader,
+                        num_users,
+                        num_items,
+                        epochs,
+                        latent_dims,
+                        learning_rate,
+                        optimizer_type,
+                        criterion=nn.MSELoss(),
+                        device=device,
+                        weight_decay=weight_decay
+                        )
+        print('Training MLP')
+        print('----------------------')
+        mlp = train_mlp(train_dataloader,
+                        test_dataloader,
+                        num_users,
+                        num_items,
+                        epochs,
+                        latent_dims,
+                        learning_rate,
+                        optimizer_type,
+                        criterion=nn.MSELoss(),
+                        device=device,
+                        weight_decay=weight_decay
+                        )
+        
+        print('Training NEURAL MF WITH PRETRAINED GMF, MLP')
+        print('----------------------')
+        model = train_neural_mf(train_dataloader,
+                               test_dataloader,
+                               gmf,
+                               mlp,
+                               num_users,
+                               num_items,
+                               epochs,
+                               latent_dims,
+                               learning_rate,
+                               optimizer_type,
+                               criterion=nn.MSELoss(),
+                               device=device,
+                               alpha=alpha,
+                               weight_decay=weight_decay
+                               )
+
     else:
         model = train_joint_nerual_mf(train_dataloader,
                                       test_dataloader,

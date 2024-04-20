@@ -12,6 +12,10 @@ class NCF_MLP(nn.Module):
         ## User and Items Embeddings
         self.mlp_embed_users = nn.Embedding(self.num_users, self.latent_dims)
         self.mlp_embed_items = nn.Embedding(self.num_items, self.latent_dims)
+
+        # Keep track of the last linear layer in order to potentially modify its
+        # weights later on
+        self.last_linear = nn.Linear(8, 1)
         
         ##layers
         self.mlp_layers = nn.Sequential(
@@ -21,7 +25,7 @@ class NCF_MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(16, 8),
             nn.ReLU(),
-            nn.Linear(8, 1)
+            self.last_linear
         )
 
         # Used for Neural MF

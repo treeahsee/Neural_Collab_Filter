@@ -123,10 +123,51 @@ def train_joint_nerual_mf(train_loader,
                           criterion,
                           device,
                           weight_decay=None):
+    """A naive implementation of GMF + MLP fusion for Neural MF.
+    
+    In the paper, the GMF and MLP models are pretrained so that the embeddings start
+    in a good place, and there's a hyperparameter weighing the relative importance
+    of each model's contriubitions at the start of training the joint model. This
+    implementation, instead, simply trains everything jointly.
+    """
     model = NEURAL_MF(num_users=num_users,
                       num_items=num_items,
                       latent_dims=latent_dims).to(device)
 
+    optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
+
+    for i in range(epochs):
+        print('Epoch', i+1)
+        print('------------------------')
+
+        train_loop(train_loader, model, criterion, optimizer, device)
+        test_loop(test_loader, model, criterion, device)
+    
+    return model
+
+# Note: specifying None for gmf/mlp is equivalent to using train_joint_neural_mf above
+def train_neural_mf(train_loader,
+                    test_loader,
+                    gmf_pretrained,
+                    mlp_pretrained,
+                    num_users,
+                    num_items,
+                    epochs,
+                    latent_dims,
+                    learning_rate,
+                    optimizer_type,
+                    criterion,
+                    device,
+                    alpha,
+                    weight_decay=None):
+
+    model = NEURAL_MF(num_users=num_users,
+                      num_items=num_items,
+                      latent_dims=latent_dims,
+                      gmf=gmf_pretrained,
+                      mlp=mlp_pretrained,
+                      alpha=alpha).to(device)
+    
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
     for i in range(epochs):
