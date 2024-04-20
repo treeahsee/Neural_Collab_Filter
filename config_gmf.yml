@@ -1,8 +1,10 @@
 movielens_data: '20m' #[20m or 100k]
-learning_rate: 0.01
+learning_rate: 0.001
 weight_decay: 0.0000001 # Only used for Adam
-epochs: 5
-batch_size: 8192
-optimizer: 'adam' #[adam or SGD]
+epochs: 3
+batch_size: 256
+optimizer: 'sgd' #[adam or SGD]
 model: 'gmf' #[mlp | gmf | nmf | joint_nmf]
-latent_dims: 64
+latent_dims: 16
+
+weight_file: 'models/gmf_16_20m'

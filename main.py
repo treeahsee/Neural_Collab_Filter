@@ -78,35 +78,47 @@ if __name__ == '__main__':
                           )
 
     elif config['model'] == 'nmf':
-        # TODO: Consider using different hyperparameters for these from the main model
-        print('Training GMF')
-        print('----------------------')
-        gmf = train_gmf(train_dataloader,
-                        test_dataloader,
-                        num_users,
-                        num_items,
-                        epochs,
-                        latent_dims,
-                        learning_rate,
-                        optimizer_type,
-                        criterion=nn.MSELoss(),
-                        device=device,
-                        weight_decay=weight_decay
-                        )
-        print('Training MLP')
-        print('----------------------')
-        mlp = train_mlp(train_dataloader,
-                        test_dataloader,
-                        num_users,
-                        num_items,
-                        epochs,
-                        latent_dims,
-                        learning_rate,
-                        optimizer_type,
-                        criterion=nn.MSELoss(),
-                        device=device,
-                        weight_decay=weight_decay
-                        )
+        if 'gmf_weights_file' in config:
+            print('Loading pretrained GMF')
+            gmf = GMF(num_users, num_items, latent_dims)
+            gmf.load_state_dict(torch.load(config['gmf_weights_file']), strict=False)
+            gmf = gmf.to(device)
+        else:
+            print('Training GMF')
+            print('----------------------')
+            gmf = train_gmf(train_dataloader,
+                            test_dataloader,
+                            num_users,
+                            num_items,
+                            epochs,
+                            latent_dims,
+                            learning_rate,
+                            optimizer_type,
+                            criterion=nn.MSELoss(),
+                            device=device,
+                            weight_decay=weight_decay
+                            )
+
+        if 'mlp_weights_file' in config:
+            print('Loading pretrained MLP')
+            mlp = NCF_MLP(num_users, num_items, latent_dims)
+            mlp.load_state_dict(torch.load(config['mlp_weights_file']), strict=False)
+            mlp = mlp.to(device)
+        else:
+            print('Training MLP')
+            print('----------------------')
+            mlp = train_mlp(train_dataloader,
+                            test_dataloader,
+                            num_users,
+                            num_items,
+                            epochs,
+                            latent_dims,
+                            learning_rate,
+                            optimizer_type,
+                            criterion=nn.MSELoss(),
+                            device=device,
+                            weight_decay=weight_decay
+                            )
         
         print('Training NEURAL MF WITH PRETRAINED GMF, MLP')
         print('----------------------')
@@ -139,5 +151,9 @@ if __name__ == '__main__':
                                       device=device,
                                       weight_decay=weight_decay
                                       )
+
+    # Save the trained model to the specified file path
+    if 'weight_file' in config:
+        torch.save(model.state_dict(), config['weight_file'])
 
     print("Done!")

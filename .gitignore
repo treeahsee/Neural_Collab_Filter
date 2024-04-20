@@ -2,4 +2,5 @@ ml-20m/*.csv
 *.zip
 **/*__pycache__/
 **/*__pycache__/*
+models/*
 
