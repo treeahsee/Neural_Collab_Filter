@@ -1,6 +1,4 @@
 from data_loader import load_data, train_test_split, MovielensDataset
-from ncf_mlp import NCF_MLP
-from gmf import GMF
 import numpy as np
 import torch
 from torch import nn 
@@ -10,6 +8,10 @@ import yaml
 from torch.utils.data import DataLoader
 import tqdm
 from sklearn.metrics import mean_squared_error
+
+from gmf import GMF
+from ncf_mlp import NCF_MLP
+from neural_mf import NEURAL_MF
 
 ### TODO:  enable device cuda
 ###        pytorch dataset class
@@ -74,8 +76,11 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train, batch_size=config['batch_size'], shuffle=True, num_workers=4)
     test_dataloader = DataLoader(test, batch_size=config['batch_size'], shuffle=True, num_workers= 4)
 
+    # TODO: Support switching out the optimizer using the config
     if config['model'] == 'gmf':
-        model = GMF(num_users, num_items, embed_dim=config['latent_dims']).to(device)
+        model = GMF(num_users=num_users,
+                    num_items=num_items,
+                    latent_dims=config['latent_dims']).to(device)
         criterion = nn.MSELoss()
         learning_rate = config['learning_rate']
         weight_decay = config['weight_decay']
@@ -88,7 +93,7 @@ if __name__ == '__main__':
             train_loop(train_dataloader, model, criterion, optimizer)
             test_loop(test_dataloader, model, criterion)
 
-    else:
+    elif config['model'] == 'mlp':
         model = NCF_MLP(num_users=num_users,
                         num_items=num_items,
                         latent_dims=config['latent_dims']).to(device)
@@ -99,5 +104,21 @@ if __name__ == '__main__':
             print(f"Epoch {t+1}\n-------------------------------")
             train_loop(train_dataloader, model, loss_fn, optimizer)
             test_loop(test_dataloader, model, loss_fn)
+    
+    else:
+        model = NEURAL_MF(num_users=num_users,
+                          num_items=num_items,
+                          latent_dims=config['latent_dims']).to(device)
+        criterion = nn.L1Loss()
+        learning_rate = config['learning_rate']
+        weight_decay = config['weight_decay']
+        optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+        for i in range(config['epochs']):
+            print('Epoch', i+1)
+            print('------------------------')
+
+            train_loop(train_dataloader, model, criterion, optimizer)
+            test_loop(test_dataloader, model, criterion)
 
     print("Done!")

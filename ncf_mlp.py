@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 class NCF_MLP(nn.Module):
-    def __init__(self, num_users, num_items, latent_dims):
+    def __init__(self, num_users, num_items, latent_dims, output_top=False):
         super().__init__()
         ## num users + num items + latent dims
         self.num_users = num_users
@@ -24,8 +24,13 @@ class NCF_MLP(nn.Module):
             nn.Linear(8, 1)
         )
 
-    def forward(self, user, items):
+        # Used for Neural MF
+        self.output_top = output_top
 
+        self.sigmoid = nn.Sigmoid()
+
+
+    def forward(self, user, items):
         ## user embedding
         user_embed = self.mlp_embed_users(user)
         ##item embedding
@@ -35,6 +40,9 @@ class NCF_MLP(nn.Module):
         user_item = torch.cat([user_embed, item_embed], dim = 1)
 
         logits = self.mlp_layers(user_item)
-        # pred = torch.Sigmoid(logits)
 
-        return logits
+        # Used for neural MF
+        if self.output_top:
+            return logits
+        
+        return self.sigmoid(logits)
