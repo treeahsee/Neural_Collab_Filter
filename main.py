@@ -1,7 +1,7 @@
 from data_loader import load_data, train_test_split, MovielensDataset
 import numpy as np
 import torch
-from torch import nn 
+from torch import nn
 from torch.optim import Adam
 import argparse
 import yaml
@@ -12,6 +12,8 @@ from sklearn.metrics import mean_squared_error
 from gmf import GMF
 from ncf_mlp import NCF_MLP
 from neural_mf import NEURAL_MF
+
+from train import train_gmf, train_joint_nerual_mf, train_mlp
 
 ### TODO:  new models + param tuning
 ###        post training analysis on users/item learning
@@ -25,48 +27,9 @@ args = parser.parse_args()
 with open(args.config, "r") as f:
     config = yaml.safe_load(f)
 
-def train_loop(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-
-    model.train()
-    for batch, (user, item, y) in enumerate(dataloader):
-        user, item, y = user.to(device), item.to(device), y.to(device)
-        pred = model(user, item)
-        loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        if config['movielens_data'] == '100k':
-            batch_num = 100
-        else:
-            batch_num = 10000
-
-        if batch % batch_num == 0:
-            loss, current = loss.item(), batch * config['batch_size'] + len(user)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
-
-def test_loop(dataloader, model, loss_fn):
-    model.eval()
-    num_batches = len(dataloader)
-    test_loss = 0
-
-    y_list = list()
-    pred_list = list()
-    with torch.no_grad():
-        for user, item, y in dataloader:
-            user, item, y = user.to(device), item.to(device), y.to(device)
-            pred = model(user, item)
-            test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
-            y_list.extend(y.tolist())
-            pred_list.extend(pred.tolist())
-
-    test_loss /= num_batches
-    print(f"Avg loss: {test_loss:>8f} \n")
-
-    test_mse = mean_squared_error(y_list, pred_list)
-    print(f"Test MSE", test_mse)
+# Ensure we don't error out if optional params aren't set
+def get_optional_config(key):
+    return config[key] if key in config else None
 
 if __name__ == '__main__':
     data, num_users, num_items = load_data(config['movielens_data'])
@@ -78,49 +41,53 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train, batch_size=config['batch_size'], shuffle=True, num_workers=4)
     test_dataloader = DataLoader(test, batch_size=config['batch_size'], shuffle=True, num_workers= 4)
 
-    # TODO: Support switching out the optimizer using the config
+    epochs = config['epochs']
+    latent_dims = config['latent_dims']
+    learning_rate = config['learning_rate']
+    optimizer_type = config['optimizer']
+
+    weight_decay = get_optional_config('weight_decay')
+
     if config['model'] == 'gmf':
-        model = GMF(num_users=num_users,
-                    num_items=num_items,
-                    latent_dims=config['latent_dims']).to(device)
-        criterion = nn.MSELoss()
-        learning_rate = config['learning_rate']
-        weight_decay = config['weight_decay']
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
-        for i in range(config['epochs']):
-            print('Epoch', i+1)
-            print('------------------------')
-
-            train_loop(train_dataloader, model, criterion, optimizer)
-            test_loop(test_dataloader, model, criterion)
+        model = train_gmf(train_dataloader,
+                          test_dataloader,
+                          num_users,
+                          num_items,
+                          epochs,
+                          latent_dims,
+                          learning_rate,
+                          optimizer_type,
+                          criterion=nn.MSELoss(),
+                          device=device,
+                          weight_decay=weight_decay
+                          )
 
     elif config['model'] == 'mlp':
-        model = NCF_MLP(num_users=num_users,
-                        num_items=num_items,
-                        latent_dims=config['latent_dims']).to(device)
-        loss_fn = nn.L1Loss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'])
-
-        for t in range(config['epochs']):
-            print(f"Epoch {t+1}\n-------------------------------")
-            train_loop(train_dataloader, model, loss_fn, optimizer)
-            test_loop(test_dataloader, model, loss_fn)
+        model = train_mlp(train_dataloader,
+                          test_dataloader,
+                          num_users,
+                          num_items,
+                          epochs,
+                          latent_dims,
+                          learning_rate,
+                          optimizer_type,
+                          criterion=nn.MSELoss(),
+                          device=device,
+                          weight_decay=weight_decay
+                          )
     
     else:
-        model = NEURAL_MF(num_users=num_users,
-                          num_items=num_items,
-                          latent_dims=config['latent_dims']).to(device)
-        criterion = nn.L1Loss()
-        learning_rate = config['learning_rate']
-        weight_decay = config['weight_decay']
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
-        for i in range(config['epochs']):
-            print('Epoch', i+1)
-            print('------------------------')
-
-            train_loop(train_dataloader, model, criterion, optimizer)
-            test_loop(test_dataloader, model, criterion)
+        model = train_joint_nerual_mf(train_dataloader,
+                                      test_dataloader,
+                                      num_users,
+                                      num_items,
+                                      epochs,
+                                      latent_dims,
+                                      learning_rate,
+                                      optimizer_type,
+                                      criterion=nn.MSELoss(),
+                                      device=device,
+                                      weight_decay=weight_decay
+                                      )
 
     print("Done!")
