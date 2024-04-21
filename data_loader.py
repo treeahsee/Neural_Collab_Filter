@@ -23,6 +23,8 @@ def load_data(size):
         data = pd.read_csv('ml-20m/ratings.csv')
         data = data.rename(columns = {'userId': 'user_id', 'movieId': 'movie_id'})
 
+    # IMPORTANT: Need to scale the ratings between 0,1 in order to train!
+    data['rating'] = data['rating'] / 5.0
 
     unique_users = data['user_id'].unique()
     unique_movies = data['movie_id'].unique()
