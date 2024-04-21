@@ -80,7 +80,7 @@ if __name__ == '__main__':
     elif config['model'] == 'nmf':
         if 'gmf_weights_file' in config:
             print('Loading pretrained GMF')
-            gmf = GMF(num_users, num_items, latent_dims)
+            gmf = GMF(num_users, num_items, latent_dims, output_top=False)
             gmf.load_state_dict(torch.load(config['gmf_weights_file']), strict=False)
             gmf = gmf.to(device)
         else:
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
         if 'mlp_weights_file' in config:
             print('Loading pretrained MLP')
-            mlp = NCF_MLP(num_users, num_items, latent_dims)
+            mlp = NCF_MLP(num_users, num_items, latent_dims, output_top=False)
             mlp.load_state_dict(torch.load(config['mlp_weights_file']), strict=False)
             mlp = mlp.to(device)
         else:

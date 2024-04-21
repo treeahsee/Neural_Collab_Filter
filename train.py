@@ -53,7 +53,9 @@ def test_loop(dataloader, model, loss_fn, device):
     # print(f"Avg loss: {test_loss:>8f} \n")
 
     test_mse = mean_squared_error(y_list, pred_list)
+    test_rmse = mean_squared_error(y_list, pred_list, squared=False)
     print(f"Test MSE", test_mse)
+    print(f"Test RMSE", test_rmse)
 
 def get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay):
     if optimizer_type == 'adam':
