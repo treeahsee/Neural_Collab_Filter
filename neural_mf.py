@@ -27,10 +27,16 @@ class NEURAL_MF(torch.nn.Module):
         self.mlp.output_top = False
 
         with torch.no_grad():
-            self.gmf.linear.weight = nn.Parameter(self.gmf.linear.weight * alpha)
-            self.mlp.last_linear.weight = nn.Parameter(self.mlp.last_linear.weight * (1 - alpha))
-        
-        self.linear = nn.Linear(2, 1)
+            self.gmf.user_embedding.weight = nn.Parameter(self.gmf.user_embedding.weight * alpha)
+            self.gmf.movie_embedding.weight = nn.Parameter(self.gmf.movie_embedding.weight * alpha)
+            self.mlp.l3.weight = nn.Parameter(self.mlp.l3.weight * (1 - alpha))
+
+        gmf_vector_length = self.gmf.embed_dim
+        mlp_vector_length = self.mlp.l4.weight.shape[1] # Input dims to last layer
+
+        concat_length = gmf_vector_length + mlp_vector_length
+
+        self.linear = nn.Linear(concat_length, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, users, movies):

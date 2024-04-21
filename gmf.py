@@ -19,10 +19,11 @@ class GMF(torch.nn.Module):
 
     def forward(self, users, movies):
         gmf = self.user_embedding(users) * self.movie_embedding(movies)
-        x = self.linear(gmf)
 
         # Last nonlinearity is not used in Neural MF
         if not self.output_top:
-            return x
+            return gmf
+
+        x = self.linear(gmf)
 
         return self.sigmoid(x)

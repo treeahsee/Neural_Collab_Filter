@@ -15,18 +15,13 @@ class NCF_MLP(nn.Module):
 
         # Keep track of the last linear layer in order to potentially modify its
         # weights later on
-        self.last_linear = nn.Linear(8, 1)
-        
         ##layers
-        self.mlp_layers = nn.Sequential(
-            nn.Linear(2 * self.latent_dims, 32),
-            nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 8),
-            nn.ReLU(),
-            self.last_linear
-        )
+        self.l1 = nn.Linear(2 * self.latent_dims, 32)
+        self.l2 = nn.Linear(32, 16)
+        self.l3 = nn.Linear(16, 8)
+        self.l4 = nn.Linear(8, 1)
+
+        self.nl = nn.ReLU()
 
         # Used for Neural MF
         self.output_top = output_top
@@ -43,10 +38,20 @@ class NCF_MLP(nn.Module):
         ##concat
         user_item = torch.cat([user_embed, item_embed], dim = 1)
 
-        logits = self.mlp_layers(user_item)
+        x = self.l1(user_item)
+        x = self.nl(x)
 
+        x = self.l2(x)
+        x = self.nl(x)
+
+        x = self.l3(x)
+        
         # Used for neural MF
         if not self.output_top:
-            return logits
-        
+            return x
+
+        x = self.nl(x)
+
+        logits = self.l4(x)
+
         return self.sigmoid(logits)
