@@ -3,4 +3,6 @@ ml-20m/*.csv
 **/*__pycache__/
 **/*__pycache__/*
 models/*
+**/*.ipynb_checkpoints/
+**/*.ipynb_checkpoints/*
 

@@ -56,6 +56,7 @@ def test_loop(dataloader, model, loss_fn, device):
     test_rmse = mean_squared_error(y_list, pred_list, squared=False)
     print(f"Test MSE", test_mse)
     print(f"Test RMSE", test_rmse)
+    return test_rmse
 
 def get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay):
     if optimizer_type == 'adam':
@@ -114,7 +115,7 @@ def train_mlp(train_loader,
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_loader, model, criterion, optimizer, device)
         test_loop(test_loader, model, criterion, device)
-    
+
     return model
 
 def train_joint_nerual_mf(train_loader,
