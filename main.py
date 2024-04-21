@@ -58,7 +58,7 @@ if __name__ == '__main__':
                           latent_dims,
                           learning_rate,
                           optimizer_type,
-                          criterion=nn.MSELoss(),
+                          criterion=nn.CrossEntropyLoss(),
                           device=device,
                           weight_decay=weight_decay
                           )
@@ -72,7 +72,7 @@ if __name__ == '__main__':
                           latent_dims,
                           learning_rate,
                           optimizer_type,
-                          criterion=nn.MSELoss(),
+                          criterion=nn.CrossEntropyLoss(),
                           device=device,
                           weight_decay=weight_decay
                           )
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                             latent_dims,
                             learning_rate,
                             optimizer_type,
-                            criterion=nn.MSELoss(),
+                            criterion=nn.CrossEntropyLoss(),
                             device=device,
                             weight_decay=weight_decay
                             )
@@ -115,11 +115,14 @@ if __name__ == '__main__':
                             latent_dims,
                             learning_rate,
                             optimizer_type,
-                            criterion=nn.MSELoss(),
+                            criterion=nn.CrossEntropyLoss(),
                             device=device,
                             weight_decay=weight_decay
                             )
         
+        gmf.output_top = False
+        mlp.output_top = False
+
         print('Training NEURAL MF WITH PRETRAINED GMF, MLP')
         print('----------------------')
         model = train_neural_mf(train_dataloader,
@@ -132,7 +135,7 @@ if __name__ == '__main__':
                                latent_dims,
                                learning_rate,
                                optimizer_type,
-                               criterion=nn.MSELoss(),
+                               criterion=nn.CrossEntropyLoss(),
                                device=device,
                                alpha=alpha,
                                weight_decay=weight_decay
@@ -147,7 +150,7 @@ if __name__ == '__main__':
                                       latent_dims,
                                       learning_rate,
                                       optimizer_type,
-                                      criterion=nn.MSELoss(),
+                                      criterion=nn.CrossEntropyLoss(),
                                       device=device,
                                       weight_decay=weight_decay
                                       )

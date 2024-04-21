@@ -26,7 +26,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
         if size < 1_000_000:
             batch_num = 100
         else:
-            batch_num = 10000
+            batch_num = 1000
 
         if batch % batch_num == 0:
             loss, current = loss.item(), batch * dataloader.batch_size + len(user)
@@ -44,12 +44,13 @@ def test_loop(dataloader, model, loss_fn, device):
         for user, item, y in dataloader:
             user, item, y = user.to(device), item.to(device), y.to(device)
             pred = model(user, item)
-            test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
+            # test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
             y_list.extend(y.tolist())
             pred_list.extend(pred.tolist())
 
-    test_loss /= num_batches
-    print(f"Avg loss: {test_loss:>8f} \n")
+    # TODO: Fix this to work with Cross Entropy Loss
+    # test_loss /= num_batches
+    # print(f"Avg loss: {test_loss:>8f} \n")
 
     test_mse = mean_squared_error(y_list, pred_list)
     print(f"Test MSE", test_mse)
@@ -75,7 +76,8 @@ def train_gmf(train_loader,
               weight_decay=None):
     model = GMF(num_users=num_users,
                 num_items=num_items,
-                embed_dim=latent_dims).to(device)
+                embed_dim=latent_dims,
+                output_top=True).to(device)
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
@@ -101,7 +103,8 @@ def train_mlp(train_loader,
               weight_decay=None):
     model = NCF_MLP(num_users=num_users,
                     num_items=num_items,
-                    latent_dims=latent_dims).to(device)
+                    latent_dims=latent_dims,
+                    output_top=True).to(device)
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 

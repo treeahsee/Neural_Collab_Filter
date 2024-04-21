@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 class GMF(torch.nn.Module):
-    def __init__(self, num_users, num_items, embed_dim, output_top=False):
+    def __init__(self, num_users, num_items, embed_dim, output_top=True):
         super().__init__()
         self.num_users = num_users
         self.num_items = num_items
@@ -22,7 +22,7 @@ class GMF(torch.nn.Module):
         x = self.linear(gmf)
 
         # Last nonlinearity is not used in Neural MF
-        if self.output_top:
+        if not self.output_top:
             return x
 
         return self.sigmoid(x)

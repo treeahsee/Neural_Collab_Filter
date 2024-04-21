@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 class NCF_MLP(nn.Module):
-    def __init__(self, num_users, num_items, latent_dims, output_top=False):
+    def __init__(self, num_users, num_items, latent_dims, output_top=True):
         super().__init__()
         ## num users + num items + latent dims
         self.num_users = num_users
@@ -46,7 +46,7 @@ class NCF_MLP(nn.Module):
         logits = self.mlp_layers(user_item)
 
         # Used for neural MF
-        if self.output_top:
+        if not self.output_top:
             return logits
         
         return self.sigmoid(logits)
