@@ -15,9 +15,6 @@ from neural_mf import NEURAL_MF
 
 from train import train_gmf, train_joint_nerual_mf, train_mlp, train_neural_mf
 
-### TODO:  new models + param tuning
-###        post training analysis on users/item learning
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 parser = argparse.ArgumentParser()
@@ -45,6 +42,10 @@ if __name__ == '__main__':
     latent_dims = config['latent_dims']
     learning_rate = config['learning_rate']
     optimizer_type = config['optimizer']
+    if config['criterion'] == 'MSE':
+        criterion = nn.MSELoss()
+    elif config['criterion'] == 'BCE':
+        criterion = nn.BCEWithLogitsLoss
 
     weight_decay = get_optional_config('weight_decay')
     alpha = get_optional_config('alpha', 0.5)
@@ -58,7 +59,7 @@ if __name__ == '__main__':
                           latent_dims,
                           learning_rate,
                           optimizer_type,
-                          criterion=nn.CrossEntropyLoss(),
+                          criterion=criterion,
                           device=device,
                           weight_decay=weight_decay
                           )
@@ -72,7 +73,7 @@ if __name__ == '__main__':
                           latent_dims,
                           learning_rate,
                           optimizer_type,
-                          criterion=nn.CrossEntropyLoss(),
+                          criterion=criterion,
                           device=device,
                           weight_decay=weight_decay
                           )
@@ -94,7 +95,7 @@ if __name__ == '__main__':
                             latent_dims,
                             learning_rate,
                             optimizer_type,
-                            criterion=nn.CrossEntropyLoss(),
+                            criterion=criterion,
                             device=device,
                             weight_decay=weight_decay
                             )
@@ -115,7 +116,7 @@ if __name__ == '__main__':
                             latent_dims,
                             learning_rate,
                             optimizer_type,
-                            criterion=nn.CrossEntropyLoss(),
+                            criterion=criterion,
                             device=device,
                             weight_decay=weight_decay
                             )
@@ -135,7 +136,7 @@ if __name__ == '__main__':
                                latent_dims,
                                learning_rate,
                                optimizer_type,
-                               criterion=nn.CrossEntropyLoss(),
+                               criterion=criterion,
                                device=device,
                                alpha=alpha,
                                weight_decay=weight_decay
@@ -150,7 +151,7 @@ if __name__ == '__main__':
                                       latent_dims,
                                       learning_rate,
                                       optimizer_type,
-                                      criterion=nn.CrossEntropyLoss(),
+                                      criterion=criterion,
                                       device=device,
                                       weight_decay=weight_decay
                                       )

@@ -12,7 +12,7 @@ class GMF(torch.nn.Module):
         self.movie_embedding = nn.Embedding(self.num_items, self.embed_dim)
         
         self.linear = nn.Linear(self.embed_dim, 1)
-        self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
 
         # Used for Neural MF
         self.output_top = output_top
@@ -26,4 +26,5 @@ class GMF(torch.nn.Module):
 
         x = self.linear(gmf)
 
-        return self.sigmoid(x)
+        # return self.sigmoid(x)
+        return x

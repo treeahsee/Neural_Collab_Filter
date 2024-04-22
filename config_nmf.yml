@@ -7,6 +7,7 @@ optimizer: 'adam' #[adam or SGD]
 model: 'nmf' #[mlp | gmf | nmf | joint_nmf]
 latent_dims: 64
 alpha: 0.5
+criterion: 'MSE' #MSE TODO: add BCE
 
 gmf_weights_file: 'models/gmf_64_100k'
 mlp_weights_file: 'models/mlp_64_100k'

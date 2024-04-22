@@ -1,10 +1,11 @@
 movielens_data: '100k' #[20m or 100k]
 learning_rate: 0.01
 weight_decay: 0.0000001 # Only used for Adam
-epochs: 10
+epochs: 5
 batch_size: 256
 optimizer: 'adam' #[adam or SGD]
 model: 'gmf' #[mlp | gmf | nmf | joint_nmf]
 latent_dims: 64
+criterion: 'MSE' #MSE TODO: add BCE
 
 weight_file: 'models/gmf_64_100k'

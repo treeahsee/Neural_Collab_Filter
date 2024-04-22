@@ -6,3 +6,5 @@ batch_size: 1024
 optimizer: 'adam' #[adam or SGD]
 model: 'joint_nmf' #[mlp | gmf | nmf | joint_nmf]
 latent_dims: 32
+criterion: 'MSE' #MSE TODO: add BCE
+
