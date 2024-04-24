@@ -6,6 +6,6 @@ batch_size: 256
 optimizer: 'adam' #[adam or sgd]
 model: 'mlp' #[mlp | gmf | nmf | joint_nmf]
 latent_dims: 64
-criterion: 'MSE' #MSE TODO: add BCE
+criterion: 'BCE' #MSE TODO: add BCE
 
 weight_file: 'models/mlp_64_100k'

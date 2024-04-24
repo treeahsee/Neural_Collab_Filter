@@ -26,8 +26,6 @@ class NCF_MLP(nn.Module):
         # Used for Neural MF
         self.output_top = output_top
 
-        # self.sigmoid = nn.Sigmoid()
-
 
     def forward(self, user, items):
         ## user embedding
@@ -54,5 +52,4 @@ class NCF_MLP(nn.Module):
 
         logits = self.l4(x)
 
-        # return self.sigmoid(logits)
         return logits

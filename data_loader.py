@@ -2,7 +2,23 @@ import pandas as pd
 import os
 import urllib.request
 import zipfile
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
+import numpy as np
+
+
+class MovielensDataset(Dataset):
+    def __init__(self, users, movies, ratings):
+        self.users = users
+        self.movies = movies
+        self.ratings = ratings
+
+    def __len__(self):
+        return self.users.shape[0]
+    
+    def __getitem__(self, index):
+        return self.users[index], self.movies[index], self.ratings[index]
+    
+
 
 def load_data(size):
     if not os.path.exists(f'ml-{size}.zip'):
@@ -61,20 +77,31 @@ def train_test_split(data, test_size = 0.2):
     train_df = pd.concat(train).reset_index()
     test_df = pd.concat(test).reset_index()
 
-
-        
+    
     return train_df, test_df
 
 
+def loo_neg_sample(data, neg_samples):
+    data['rating'] = 1
+    df = data.sort_values(['user_id', 'timestamp'])
+    test_df = df.groupby('user_id').tail(1)
+    train_df = df.drop(test_df.index)
 
-class MovielensDataset(Dataset):
-    def __init__(self, users, movies, ratings):
-        self.users = users
-        self.movies = movies
-        self.ratings = ratings
+    all_movies = df['movie_id'].unique()
 
-    def __len__(self):
-        return self.users.shape[0]
-    
-    def __getitem__(self, index):
-        return self.users[index], self.movies[index], self.ratings[index]
+    train_negative_samples = []
+    test_negative_samples = []
+
+    for user in df['user_id'].unique():
+        user_movies = df[df['user_id'] == user]['movie_id'].values
+        negative_train = np.random.choice(list(set(all_movies) - set(user_movies)), size=neg_samples, replace=False)
+        train_negative_samples.extend([(user, m, 0, np.nan) for m in negative_train])
+
+        negative_test = np.random.choice(list(set(all_movies) - set(user_movies) - set(negative_train)), size=neg_samples, replace=False)
+        test_negative_samples.extend([(user, m, 0, np.nan) for m in negative_test])
+
+    train_df = pd.concat([train_df, pd.DataFrame(train_negative_samples, columns=df.columns)]).reset_index()
+    test_df = pd.concat([test_df, pd.DataFrame(test_negative_samples, columns=df.columns)]).reset_index()
+
+    return train_df, test_df
+

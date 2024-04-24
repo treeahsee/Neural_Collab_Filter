@@ -37,7 +37,6 @@ class NEURAL_MF(torch.nn.Module):
         concat_length = gmf_vector_length + mlp_vector_length
 
         self.linear = nn.Linear(concat_length, 1)
-        # self.sigmoid = nn.Sigmoid()
 
     def forward(self, users, movies):
         gmf_top = self.gmf(users, movies)
@@ -46,5 +45,4 @@ class NEURAL_MF(torch.nn.Module):
         top_outputs = torch.cat([gmf_top, mlp_top], dim=1)
 
         x = self.linear(top_outputs)
-        # return self.sigmoid(x)
         return x

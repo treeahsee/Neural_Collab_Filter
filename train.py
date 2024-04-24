@@ -17,10 +17,12 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     for batch, (user, item, y) in enumerate(dataloader):
         user, item, y = user.to(device), item.to(device), y.to(device)
         pred = model(user, item)
+        optimizer.zero_grad()
         loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
+        
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
+        
 
         # If we're using a smaller dataset, print more frequently
         if size < 1_000_000:
@@ -41,22 +43,38 @@ def test_loop(dataloader, model, loss_fn, device):
     y_list = list()
     pred_list = list()
     with torch.no_grad():
+        hr = []
+        print(dataloader.shape)
         for user, item, y in dataloader:
             user, item, y = user.to(device), item.to(device), y.to(device)
             pred = model(user, item)
+    
+            values, indices = torch.topk(pred.squeeze(), 10)
+            recommends = torch.take(item, indices).cpu().numpy().tolist()
+
+            ng_item = item[0].item()
+            hr.append(hit_rate(ng_item, recommends))
+
+        print(print(np.mean(hr)))
             # test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
-            y_list.extend(y.tolist())
-            pred_list.extend(pred.tolist())
+            # y_list.extend(y.tolist())
+            # pred_list.extend(pred.tolist())
 
     # TODO: Fix this to work with Cross Entropy Loss
     # test_loss /= num_batches
     # print(f"Avg loss: {test_loss:>8f} \n")
 
-    test_mse = mean_squared_error(y_list, pred_list)
-    test_rmse = mean_squared_error(y_list, pred_list, squared=False)
-    print(f"Test MSE", test_mse)
-    print(f"Test RMSE", test_rmse)
-    return test_rmse
+    # test_mse = mean_squared_error(y_list, pred_list)
+    # test_rmse = mean_squared_error(y_list, pred_list, squared=False)
+    # print(f"Test MSE", test_mse)
+    # print(f"Test RMSE", test_rmse)
+    # return test_rmse
+
+def hit_rate(loo_item, reccos):
+    if loo_item in reccos:
+        return 1
+    else:
+        return 0
 
 def get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay):
     if optimizer_type == 'adam':

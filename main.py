@@ -1,4 +1,4 @@
-from data_loader import load_data, train_test_split, MovielensDataset
+from data_loader import load_data, train_test_split, MovielensDataset, loo_neg_sample
 import numpy as np
 import torch
 from torch import nn
@@ -30,7 +30,11 @@ def get_optional_config(key, default=None):
 
 if __name__ == '__main__':
     data, num_users, num_items = load_data(config['movielens_data'])
-    train, test = train_test_split(data)
+
+    if config['criterion'] == 'MSE':
+        train, test = train_test_split(data)
+    elif config['criterion'] == 'BCE':
+        train, test = loo_neg_sample(data, neg_samples= 20)
 
     train = MovielensDataset(users=train['user_id'], movies=train['movie_id'], ratings = train['rating'])
     test = MovielensDataset(users=test['user_id'], movies=test['movie_id'], ratings = test['rating'])
@@ -45,7 +49,7 @@ if __name__ == '__main__':
     if config['criterion'] == 'MSE':
         criterion = nn.MSELoss()
     elif config['criterion'] == 'BCE':
-        criterion = nn.BCEWithLogitsLoss
+        criterion = nn.BCEWithLogitsLoss()
 
     weight_decay = get_optional_config('weight_decay')
     alpha = get_optional_config('alpha', 0.5)
