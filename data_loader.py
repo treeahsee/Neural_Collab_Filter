@@ -4,7 +4,7 @@ import urllib.request
 import zipfile
 from torch.utils.data import Dataset, DataLoader
 
-def load_data(size):
+def load_data(size, rescale_data=False):
     if not os.path.exists(f'ml-{size}.zip'):
         urllib.request.urlretrieve(f'https://files.grouplens.org/datasets/movielens/ml-{size}.zip', f'ml-{size}.zip')
 
@@ -23,8 +23,10 @@ def load_data(size):
         data = pd.read_csv('ml-20m/ratings.csv')
         data = data.rename(columns = {'userId': 'user_id', 'movieId': 'movie_id'})
 
-    # IMPORTANT: Need to scale the ratings between 0,1 in order to train!
-    # data['rating'] = data['rating'] / 5.0
+
+    # IMPORTANT: For regression tasks we need to rescale the ratings between 0,1
+    if rescale_data:
+        data['rating'] = data['rating'] / 5.0
 
     unique_users = data['user_id'].unique()
     unique_movies = data['movie_id'].unique()

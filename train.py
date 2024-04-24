@@ -33,7 +33,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
-def test_loop(dataloader, model, loss_fn, device):
+def test_loop(dataloader, model, loss_fn, device, rescale_data=False):
     model.eval()
     num_batches = len(dataloader)
     test_loss = 0
@@ -51,6 +51,11 @@ def test_loop(dataloader, model, loss_fn, device):
     # TODO: Fix this to work with Cross Entropy Loss
     # test_loss /= num_batches
     # print(f"Avg loss: {test_loss:>8f} \n")
+
+    if rescale_data:
+        # Need to rescale things back when evaluating
+        y_list = np.array(y_list) * 5.0
+        pred_list = np.array(pred_list) * 5.0
 
     test_mse = mean_squared_error(y_list, pred_list)
     test_rmse = mean_squared_error(y_list, pred_list, squared=False)
@@ -76,11 +81,13 @@ def train_gmf(train_loader,
               optimizer_type,
               criterion,
               device,
-              weight_decay=None):
+              weight_decay=None,
+              top_depth=1,
+              rescale_data=False):
     model = GMF(num_users=num_users,
                 num_items=num_items,
                 embed_dim=latent_dims,
-                output_top=True).to(device)
+                top_depth=top_depth).to(device)
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
@@ -89,7 +96,7 @@ def train_gmf(train_loader,
         print('------------------------')
 
         train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device)
+        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
     
     return model
 
@@ -103,18 +110,20 @@ def train_mlp(train_loader,
               optimizer_type,
               criterion,
               device,
-              weight_decay=None):
+              weight_decay=None,
+              top_depth=1,
+              rescale_data=False):
     model = NCF_MLP(num_users=num_users,
                     num_items=num_items,
                     latent_dims=latent_dims,
-                    output_top=True).to(device)
+                    top_depth=top_depth).to(device)
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device)
+        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
 
     return model
 
@@ -128,7 +137,9 @@ def train_joint_nerual_mf(train_loader,
                           optimizer_type,
                           criterion,
                           device,
-                          weight_decay=None):
+                          weight_decay=None,
+                          top_depth=1,
+                          rescale_data=False):
     """A naive implementation of GMF + MLP fusion for Neural MF.
     
     In the paper, the GMF and MLP models are pretrained so that the embeddings start
@@ -138,7 +149,8 @@ def train_joint_nerual_mf(train_loader,
     """
     model = NEURAL_MF(num_users=num_users,
                       num_items=num_items,
-                      latent_dims=latent_dims).to(device)
+                      latent_dims=latent_dims,
+                      top_depth=top_depth).to(device)
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
@@ -147,7 +159,7 @@ def train_joint_nerual_mf(train_loader,
         print('------------------------')
 
         train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device)
+        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
     
     return model
 
@@ -165,14 +177,17 @@ def train_neural_mf(train_loader,
                     criterion,
                     device,
                     alpha,
-                    weight_decay=None):
+                    weight_decay=None,
+                    top_depth=1,
+                    rescale_data=False):
 
     model = NEURAL_MF(num_users=num_users,
                       num_items=num_items,
                       latent_dims=latent_dims,
                       gmf=gmf_pretrained,
                       mlp=mlp_pretrained,
-                      alpha=alpha).to(device)
+                      alpha=alpha,
+                      top_depth=top_depth).to(device)
     
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
@@ -181,6 +196,6 @@ def train_neural_mf(train_loader,
         print('------------------------')
 
         train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device)
+        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
     
     return model

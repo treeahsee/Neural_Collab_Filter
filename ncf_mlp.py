@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 class NCF_MLP(nn.Module):
-    def __init__(self, num_users, num_items, latent_dims, output_top=True):
+    def __init__(self, num_users, num_items, latent_dims, top_depth=0):
         super().__init__()
         ## num users + num items + latent dims
         self.num_users = num_users
@@ -24,9 +24,9 @@ class NCF_MLP(nn.Module):
         self.nl = nn.ReLU()
 
         # Used for Neural MF
-        self.output_top = output_top
+        self.top_depth = top_depth
 
-        # self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
 
 
     def forward(self, user, items):
@@ -47,12 +47,13 @@ class NCF_MLP(nn.Module):
         x = self.l3(x)
         
         # Used for neural MF
-        if not self.output_top:
+        if self.top_depth == 2:
             return x
 
         x = self.nl(x)
-
         logits = self.l4(x)
+        if self.top_depth == 1:
+            return logits
 
-        # return self.sigmoid(logits)
-        return logits
+        # return logits
+        return self.sigmoid(logits)

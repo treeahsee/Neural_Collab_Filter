@@ -29,7 +29,16 @@ def get_optional_config(key, default=None):
     return config[key] if key in config else default
 
 if __name__ == '__main__':
-    data, num_users, num_items = load_data(config['movielens_data'])
+    if config['criterion'] == 'MSE':
+        criterion = nn.MSELoss()
+        top_depth = get_optional_config('top_depth', 1)
+        rescale_data = True
+    elif config['criterion'] == 'BCE':
+        criterion = nn.BCEWithLogitsLoss
+        top_depth = 1 # Don't use sigmoid activation with classification task
+        rescale_data = False
+
+    data, num_users, num_items = load_data(config['movielens_data'], rescale_data=rescale_data)
     train, test = train_test_split(data)
 
     train = MovielensDataset(users=train['user_id'], movies=train['movie_id'], ratings = train['rating'])
@@ -42,13 +51,10 @@ if __name__ == '__main__':
     latent_dims = config['latent_dims']
     learning_rate = config['learning_rate']
     optimizer_type = config['optimizer']
-    if config['criterion'] == 'MSE':
-        criterion = nn.MSELoss()
-    elif config['criterion'] == 'BCE':
-        criterion = nn.BCEWithLogitsLoss
 
     weight_decay = get_optional_config('weight_decay')
     alpha = get_optional_config('alpha', 0.5)
+    top_depth = get_optional_config('top_depth', 1)
 
     if config['model'] == 'gmf':
         model = train_gmf(train_dataloader,
@@ -61,7 +67,8 @@ if __name__ == '__main__':
                           optimizer_type,
                           criterion=criterion,
                           device=device,
-                          weight_decay=weight_decay
+                          weight_decay=weight_decay,
+                          rescale_data=rescale_data
                           )
 
     elif config['model'] == 'mlp':
@@ -75,13 +82,14 @@ if __name__ == '__main__':
                           optimizer_type,
                           criterion=criterion,
                           device=device,
-                          weight_decay=weight_decay
+                          weight_decay=weight_decay,
+                          rescale_data=rescale_data
                           )
 
     elif config['model'] == 'nmf':
         if 'gmf_weights_file' in config:
             print('Loading pretrained GMF')
-            gmf = GMF(num_users, num_items, latent_dims, output_top=False)
+            gmf = GMF(num_users, num_items, latent_dims, top_depth=top_depth)
             gmf.load_state_dict(torch.load(config['gmf_weights_file']), strict=False)
             gmf = gmf.to(device)
         else:
@@ -97,12 +105,14 @@ if __name__ == '__main__':
                             optimizer_type,
                             criterion=criterion,
                             device=device,
-                            weight_decay=weight_decay
+                            weight_decay=weight_decay,
+                            top_depth=top_depth,
+                            rescale_data=rescale_data
                             )
 
         if 'mlp_weights_file' in config:
             print('Loading pretrained MLP')
-            mlp = NCF_MLP(num_users, num_items, latent_dims, output_top=False)
+            mlp = NCF_MLP(num_users, num_items, latent_dims, top_depth=top_depth)
             mlp.load_state_dict(torch.load(config['mlp_weights_file']), strict=False)
             mlp = mlp.to(device)
         else:
@@ -118,7 +128,9 @@ if __name__ == '__main__':
                             optimizer_type,
                             criterion=criterion,
                             device=device,
-                            weight_decay=weight_decay
+                            weight_decay=weight_decay,
+                            top_depth=top_depth,
+                            rescale_data=rescale_data
                             )
         
         gmf.output_top = False
@@ -139,7 +151,9 @@ if __name__ == '__main__':
                                criterion=criterion,
                                device=device,
                                alpha=alpha,
-                               weight_decay=weight_decay
+                               weight_decay=weight_decay,
+                               top_depth=top_depth,
+                               rescale_data=rescale_data
                                )
 
     else:
@@ -153,7 +167,8 @@ if __name__ == '__main__':
                                       optimizer_type,
                                       criterion=criterion,
                                       device=device,
-                                      weight_decay=weight_decay
+                                      weight_decay=weight_decay,
+                                      rescale_data=rescale_data
                                       )
 
     # Save the trained model to the specified file path
