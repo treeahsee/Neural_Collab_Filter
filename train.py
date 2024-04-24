@@ -44,16 +44,15 @@ def test_loop(dataloader, model, loss_fn, device):
     pred_list = list()
     with torch.no_grad():
         hr = []
-        print(dataloader.shape)
         for user, item, y in dataloader:
             user, item, y = user.to(device), item.to(device), y.to(device)
             pred = model(user, item)
     
             values, indices = torch.topk(pred.squeeze(), 10)
-            recommends = torch.take(item, indices).cpu().numpy().tolist()
+            recco = torch.take(item, indices).cpu().numpy().tolist()
 
-            ng_item = item[0].item()
-            hr.append(hit_rate(ng_item, recommends))
+            neg_sample = item[0].item()
+            hr.append(hit_rate(neg_sample, recco))
 
         print(np.mean(hr))
             # test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
