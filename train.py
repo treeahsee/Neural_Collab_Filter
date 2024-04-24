@@ -55,7 +55,7 @@ def test_loop(dataloader, model, loss_fn, device):
             ng_item = item[0].item()
             hr.append(hit_rate(ng_item, recommends))
 
-        print(print(np.mean(hr)))
+        print(np.mean(hr))
             # test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
             # y_list.extend(y.tolist())
             # pred_list.extend(pred.tolist())
