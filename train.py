@@ -14,10 +14,12 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     size = len(dataloader.dataset)
 
     model.train()
+    train_loss = 0
     for batch, (user, item, y) in enumerate(dataloader):
         user, item, y = user.to(device), item.to(device), y.to(device)
         pred = model(user, item)
         loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
+        train_loss += loss.item()
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -31,6 +33,9 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
         if batch % batch_num == 0:
             loss, current = loss.item(), batch * dataloader.batch_size + len(user)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+    
+    train_loss /= size
+    return train_loss
 
 
 def test_loop(dataloader, model, loss_fn, device, rescale_data=False):
@@ -40,17 +45,19 @@ def test_loop(dataloader, model, loss_fn, device, rescale_data=False):
 
     y_list = list()
     pred_list = list()
+    loss_list = list()
+    test_loss = 0
     with torch.no_grad():
         for user, item, y in dataloader:
             user, item, y = user.to(device), item.to(device), y.to(device)
             pred = model(user, item)
-            # test_loss += loss_fn(pred.squeeze(dim = 1), y).item()
+            loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
+            test_loss += loss.item()
             y_list.extend(y.tolist())
             pred_list.extend(pred.tolist())
 
-    # TODO: Fix this to work with Cross Entropy Loss
-    # test_loss /= num_batches
-    # print(f"Avg loss: {test_loss:>8f} \n")
+    test_loss /= num_batches
+    print(f"Avg loss: {test_loss:>8f} \n")
 
     if rescale_data:
         # Need to rescale things back when evaluating
@@ -61,7 +68,7 @@ def test_loop(dataloader, model, loss_fn, device, rescale_data=False):
     test_rmse = mean_squared_error(y_list, pred_list, squared=False)
     print(f"Test MSE", test_mse)
     print(f"Test RMSE", test_rmse)
-    return test_rmse
+    return test_rmse, test_loss
 
 def get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay):
     if optimizer_type == 'adam':
@@ -91,14 +98,21 @@ def train_gmf(train_loader,
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
+    train_loss_history = []
+    test_loss_history = []
+    test_rmse_history = []
     for i in range(epochs):
         print('Epoch', i+1)
         print('------------------------')
 
-        train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
+        train_loss = train_loop(train_loader, model, criterion, optimizer, device)
+        test_rmse, test_loss = test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
+
+        train_loss_history.append(train_loss)
+        test_loss_history.append(test_loss)
+        test_rmse_history.append(test_rmse)
     
-    return model
+    return (model, train_loss_history, test_loss_history, test_rmse_history)
 
 def train_mlp(train_loader,
               test_loader,
@@ -120,12 +134,20 @@ def train_mlp(train_loader,
 
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
+    train_loss_history = []
+    test_loss_history = []
+    test_rmse_history = []
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
 
-    return model
+        train_loss = train_loop(train_loader, model, criterion, optimizer, device)
+        test_rmse, test_loss = test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
+
+        train_loss_history.append(train_loss)
+        test_loss_history.append(test_loss)
+        test_rmse_history.append(test_rmse)
+
+    return (model, train_loss_history, test_loss_history, test_rmse_history)
 
 def train_joint_nerual_mf(train_loader,
                           test_loader,
@@ -191,11 +213,18 @@ def train_neural_mf(train_loader,
     
     optimizer = get_optimizer_by_type(model, optimizer_type, learning_rate, weight_decay)
 
+    train_loss_history = []
+    test_loss_history = []
+    test_rmse_history = []
     for i in range(epochs):
         print('Epoch', i+1)
         print('------------------------')
 
-        train_loop(train_loader, model, criterion, optimizer, device)
-        test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
+        train_loss = train_loop(train_loader, model, criterion, optimizer, device)
+        test_rmse, test_loss = test_loop(test_loader, model, criterion, device, rescale_data=rescale_data)
+
+        train_loss_history.append(train_loss)
+        test_loss_history.append(test_loss)
+        test_rmse_history.append(test_rmse)
     
-    return model
+    return (model, train_loss_history, test_loss_history, test_rmse_history)
