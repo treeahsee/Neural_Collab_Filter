@@ -68,9 +68,8 @@ def hit_rate(model,
 
             users_to_k_ratings[user] = mheap.get_top_ratings()
             for rating_unused, movie in mheap.get_top_ratings():
-                if ((data['user_id'] == user) & (data['movie_id'] == movie)).any():
+                if movie in data.loc[user]["movie_id"]:
                     hits += 1
-                    break
 
         hit_rate = hits / num_users
         return (hit_rate, users_to_k_ratings)
@@ -106,7 +105,7 @@ def precision_at_k(model,
 
             users_to_k_ratings[user] = mheap.get_top_ratings()
             for rating_unused, movie in mheap.get_top_ratings():
-                if ((data['user_id'] == user) & (data['movie_id'] == movie)).any():
+                if movie in data.loc[user]["movie_id"]:
                     hits += 1
 
         hit_rate = hits / (num_users * k)

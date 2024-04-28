@@ -1,4 +1,5 @@
-from ray.air import RunConfig, CheckpointConfig
+import ray
+from ray.air import RunConfig, CheckpointConfig, ScalingConfig
 from ray.train.torch import TorchTrainer
 
 from data_loader import load_data, train_test_split_shuffle, MovielensAllMovieRatingsPerUserDataset, MovielensConcatDataset
@@ -16,6 +17,7 @@ from ray.train.lightning import (
 )
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
+ray.init(num_gpus=1, ignore_reinit_error=True)
 
 
 def load_datasets(batch_size):
@@ -38,6 +40,8 @@ def load_datasets(batch_size):
 
 
 def train(config):
+    num_users, num_items, train_dataloader, validation_dataloader, all_train_dataloader, test_dataloader = load_datasets(
+        config["batch_size"])
     model = VariationalAutoencoder(
         item_dim=num_items,
         **config,
@@ -48,7 +52,7 @@ def train(config):
     trainer.test(ckpt_path='best')
 
 
-def train_ray(config):
+def train_ray(config, num_items, train_dataloader, validation_dataloader):
     model = VariationalAutoencoder(
         item_dim=num_items,
         **config,
@@ -57,22 +61,24 @@ def train_ray(config):
                     strategy=RayDDPStrategy(),
                     callbacks=[RayTrainReportCallback()],
                     plugins=[RayLightningEnvironment()],
-                    logger=TensorBoardLogger(save_dir="logs/"))
+                    logger=TensorBoardLogger(save_dir="logs/tune/"))
     trainer = prepare_trainer(trainer)
     trainer.fit(model=model, train_dataloaders=train_dataloader, val_dataloaders=validation_dataloader)
 
 
 def tune_ray(num_samples=4):
+    num_users, num_items, train_dataloader, validation_dataloader, all_train_dataloader, test_dataloader = load_datasets(
+        1000)
     search_space = {
         "learning_rate": tune.loguniform(1e-5, 1e-2),
         "weight_decay": tune.loguniform(1e-6, 1e-3),
         "latent_dim": tune.choice([100, 200, 300]),
         "hidden_dim": tune.choice([400, 600, 800]),
-        "batch_size": 1000,
+        "embedding_dim": tune.choice([64, 128, 256]),
         "loss_type": "mse",
         "total_anneal_steps": tune.lograndint(10000, 300000),
         "anneal_cap": tune.uniform(0.1, 0.3),
-        "embedding_dim": tune.choice([64, 128, 256])
+        "max_epochs": 10,
     }
     scheduler = ASHAScheduler(max_t=10, grace_period=1, reduction_factor=2)
     run_config = RunConfig(
@@ -82,13 +88,17 @@ def tune_ray(num_samples=4):
             checkpoint_score_order="min",
         ),
     )
+    scaling_config = ScalingConfig(
+        num_workers=1, use_gpu=True, resources_per_worker={"CPU": 8, "GPU": 1}
+    )
     ray_trainer = TorchTrainer(
-        train_ray,
+        lambda config: train_ray(config, num_items, train_dataloader, validation_dataloader),
         run_config=run_config,
+        scaling_config=scaling_config,
     )
     tuner = tune.Tuner(
         ray_trainer,
-        param_space={"config": search_space},
+        param_space={"train_loop_config": search_space},
         tune_config=tune.TuneConfig(
             metric="val_loss",
             mode="min",
@@ -109,8 +119,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = vars(args)
-
-    num_users, num_items, train_dataloader, validation_dataloader, all_train_dataloader, test_dataloader = load_datasets(config["batch_size"])
 
     if config["tune"]:
         results = tune_ray()
