@@ -68,7 +68,7 @@ def train_ray(config, num_items, train_dataloader, validation_dataloader):
 
 def tune_ray(num_samples=4):
     num_users, num_items, train_dataloader, validation_dataloader, all_train_dataloader, test_dataloader = load_datasets(
-        1000)
+        200)
     search_space = {
         "learning_rate": tune.loguniform(1e-5, 1e-2),
         "weight_decay": tune.loguniform(1e-6, 1e-3),
@@ -89,7 +89,7 @@ def tune_ray(num_samples=4):
         ),
     )
     scaling_config = ScalingConfig(
-        num_workers=1, use_gpu=True, resources_per_worker={"CPU": 8, "GPU": 1}
+        num_workers=1, use_gpu=True, resources_per_worker={"CPU": 2, "GPU": 1}
     )
     ray_trainer = TorchTrainer(
         lambda config: train_ray(config, num_items, train_dataloader, validation_dataloader),
@@ -115,6 +115,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--tune", type=bool, default=False)
     parser.add_argument("--batch_size", type=int, default=1000)
+    parser.add_argument("--max_epochs", type=int, default=10)
     parser = VariationalAutoencoder.add_model_specific_args(parser)
     args = parser.parse_args()
 
