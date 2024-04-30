@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 import numpy as np
 
-def load_data(size, rescale_data=False, negative_samples=5):
+def load_data(size, rescale_data=False, negative_samples=20):
     if not os.path.exists(f'ml-{size}.zip'):
         urllib.request.urlretrieve(f'https://files.grouplens.org/datasets/movielens/ml-{size}.zip', f'ml-{size}.zip')
 
@@ -38,10 +38,6 @@ def load_data(size, rescale_data=False, negative_samples=5):
         # IMPORTANT: For regression tasks we need to rescale the ratings between 0,1
         data['rating'] = data['rating'] / 5.0
     else:
-        # Since we're not rescaling data, this is not a regression task.
-        # We need to:
-        # 1) set all ratings equal to 1
-        # 2) for each user, add 100 negative samples as zeros.
         data['rating'] = 1.0
         new_data = data.copy()
         new_rows = []
@@ -53,7 +49,6 @@ def load_data(size, rescale_data=False, negative_samples=5):
 
             new_rows.extend([{'user_id': user,'movie_id': sample, 'rating': 0} for sample in movie_samples])
     
-        new_rows = np.array(new_rows)
         new_data_frame = pd.DataFrame(new_rows)
         new_data = pd.concat([new_data, new_data_frame], ignore_index=True)
         data = new_data

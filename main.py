@@ -71,7 +71,7 @@ if __name__ == '__main__':
                           device=device,
                           weight_decay=weight_decay,
                           rescale_data=rescale_data
-                          )
+                          )[0]
 
     elif config['model'] == 'mlp':
         model = train_mlp(train_dataloader,
@@ -86,7 +86,7 @@ if __name__ == '__main__':
                           device=device,
                           weight_decay=weight_decay,
                           rescale_data=rescale_data
-                          )
+                          )[0]
 
     elif config['model'] == 'nmf':
         if 'gmf_weights_file' in config:
@@ -110,7 +110,7 @@ if __name__ == '__main__':
                             weight_decay=weight_decay,
                             top_depth=top_depth,
                             rescale_data=rescale_data
-                            )
+                            )[0]
 
         if 'mlp_weights_file' in config:
             print('Loading pretrained MLP')
@@ -133,7 +133,7 @@ if __name__ == '__main__':
                             weight_decay=weight_decay,
                             top_depth=top_depth,
                             rescale_data=rescale_data
-                            )
+                            )[0]
         
         gmf.output_top = False
         mlp.output_top = False
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                                weight_decay=weight_decay,
                                top_depth=top_depth,
                                rescale_data=rescale_data
-                               )
+                               )[0]
 
     else:
         model = train_joint_nerual_mf(train_dataloader,

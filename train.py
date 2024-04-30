@@ -16,7 +16,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, device):
     model.train()
     train_loss = 0
     for batch, (user, item, y) in enumerate(dataloader):
-        user, item, y = user.to(device), item.to(device), y.to(device)
+        user, item, y = user.to(device).long(), item.to(device).long(), y.to(device)
         pred = model(user, item)
         loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
         train_loss += loss.item()
@@ -49,7 +49,7 @@ def test_loop(dataloader, model, loss_fn, device, rescale_data=False):
     test_loss = 0
     with torch.no_grad():
         for user, item, y in dataloader:
-            user, item, y = user.to(device), item.to(device), y.to(device)
+            user, item, y = user.to(device).long(), item.to(device).long(), y.to(device)
             pred = model(user, item)
             loss = loss_fn(pred.squeeze(dim = 1), y.to(torch.float32))
             test_loss += loss.item()
