@@ -29,15 +29,17 @@ def get_optional_config(key, default=None):
     return config[key] if key in config else default
 
 if __name__ == '__main__':
-    if config['criterion'] == 'MSE':
+    if config['criterion'] == 'BCE':
+        criterion = nn.BCEWithLogitsLoss()
+        top_depth = 1 # Don't use sigmoid activation with classification task
+        rescale_data = False
+    else: # MSE By Default, can support others with an elif later if necessary
         criterion = nn.MSELoss()
         top_depth = get_optional_config('top_depth', 1)
         rescale_data = True
-    elif config['criterion'] == 'BCE':
-        criterion = nn.BCEWithLogitsLoss
-        top_depth = 1 # Don't use sigmoid activation with classification task
-        rescale_data = False
 
+    print("Using Loss", criterion)
+    print("Rescaling Data", rescale_data)
     data, num_users, num_items = load_data(config['movielens_data'], rescale_data=rescale_data)
     train, test = train_test_split(data)
 

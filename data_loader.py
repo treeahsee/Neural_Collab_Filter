@@ -4,7 +4,12 @@ import urllib.request
 import zipfile
 from torch.utils.data import Dataset, DataLoader
 
-def load_data(size, rescale_data=False):
+# from tqdm.notebook import tqdm
+from tqdm import tqdm
+
+import numpy as np
+
+def load_data(size, rescale_data=False, negative_samples=5):
     if not os.path.exists(f'ml-{size}.zip'):
         urllib.request.urlretrieve(f'https://files.grouplens.org/datasets/movielens/ml-{size}.zip', f'ml-{size}.zip')
 
@@ -24,12 +29,34 @@ def load_data(size, rescale_data=False):
         data = data.rename(columns = {'userId': 'user_id', 'movieId': 'movie_id'})
 
 
-    # IMPORTANT: For regression tasks we need to rescale the ratings between 0,1
-    if rescale_data:
-        data['rating'] = data['rating'] / 5.0
-
     unique_users = data['user_id'].unique()
+    print("Number of users", len(unique_users))
     unique_movies = data['movie_id'].unique()
+    print("Number of movies", len(unique_movies))
+    
+    if rescale_data:
+        # IMPORTANT: For regression tasks we need to rescale the ratings between 0,1
+        data['rating'] = data['rating'] / 5.0
+    else:
+        # Since we're not rescaling data, this is not a regression task.
+        # We need to:
+        # 1) set all ratings equal to 1
+        # 2) for each user, add 100 negative samples as zeros.
+        data['rating'] = 1.0
+        new_data = data.copy()
+        new_rows = []
+        for user in tqdm(unique_users):
+            user_data = data.loc[data['user_id'] == user]
+            movies_for_user = user_data['movie_id'].unique()
+
+            movie_samples = np.random.choice(np.setdiff1d(unique_movies, movies_for_user), negative_samples)
+
+            new_rows.extend([{'user_id': user,'movie_id': sample, 'rating': 0} for sample in movie_samples])
+    
+        new_rows = np.array(new_rows)
+        new_data_frame = pd.DataFrame(new_rows)
+        new_data = pd.concat([new_data, new_data_frame], ignore_index=True)
+        data = new_data
 
     ##zero index for embedding layer
     user_map = {old : new for new, old in enumerate(unique_users)}
@@ -40,11 +67,14 @@ def load_data(size, rescale_data=False):
     ##user item size
     num_users = unique_users.shape[0]
     num_movies = unique_movies.shape[0]
+    
+    # sort by user_id to ensure things are grouped naturally as before potentially adding rows
+    data = data.sort_values('user_id').reset_index()
 
     return data, num_users, num_movies
 
 
-def train_test_split(data, test_size = 0.2):
+def train_test_split(data, test_size = 0.3):
     user_group = data.groupby('user_id')
 
     train, test = [], []

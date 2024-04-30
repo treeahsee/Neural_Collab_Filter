@@ -30,6 +30,9 @@ class NCF_MLP(nn.Module):
 
 
     def forward(self, user, items):
+        user = user.long()
+        items = items.long()
+
         ## user embedding
         user_embed = self.mlp_embed_users(user)
         ##item embedding
